@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hack-a-Problem - Crowdsourced Problem Solving Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Toggle button styling */
+        .toggle-chat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .toggle-chat:hover {
+            background-color: #0056b3;
+        }
+
+        /* Chat container styling */
+        .chat-container {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 400px;
+            height: 500px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Chat messages area */
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Message styling */
+        .message {
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background-color: #f1f1f1;
+            color: #333;
+            align-self: flex-start;
+        }
+
+        /* Input area styling */
+        .input-container {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .input-container button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Loader styling */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Add these styles to your existing styles */
+        .tracking-form {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        #trackingResult .card {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-pending .status-indicator { background-color: #ffd32a; }
+        .status-progress .status-indicator { background-color: #0984e3; }
+        .status-solved .status-indicator { background-color: #00b894; }
+
+        .problem-details {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .footer {
+      background-color: #222;
+      color: #fff;
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    .footer-section {
+      margin: 5px;
+      text-align: center;
+    }
+
+    .footer h3 {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .footer a {
+      color: #00bcd4;
+      text-decoration: none;
+      margin: 3px;
+      display: block;
+      font-size: 12px;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .social-icons a {
+      margin: 0 5px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .social-icons a:hover {
+      color: #00bcd4;
+    }
+
+    .bottom-text {
+      text-align: center;
+      background-color: #111;
+      padding: 5px 0;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    /* Problem Card Styles */
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    }
+
+    .card-img-top {
+        border-top-left-radius: calc(0.375rem - 1px);
+        border-top-right-radius: calc(0.375rem - 1px);
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.8em;
+    }
+
+    .card-footer {
+        border-top: 1px solid rgba(0,0,0,0.075);
+        background-color: rgba(0,0,0,0.02);
+    }
+
+    .btn-outline-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,123,255,0.2);
+    }
+
+    /* Add these styles for greeting and categories */
+    .solution-item {
+        border-color: #0d6efd !important;
+    }
+    .hidden {
+        display: none !important;
+    }
+    .toast-container {
+        z-index: 1500;
+    }
+    #greetingToast {
+        min-width: 350px;
+    }
+    .btn-outline-primary {
+        transition: all 0.3s ease;
+    }
+    .btn-outline-primary.active {
+        background-color: #0d6efd;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,123,255,0.2);
+    }
+    #categories-filter .btn {
+        margin: 0.25rem;
+    }
+    .category-btn {
+        transition: all 0.2s ease-in-out;
+    }
+    .category-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    /* Updated responsive filter button styles */
+    #categories-filter {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin: 1rem 0;
+    }
+    
+    .category-btn {
+        min-width: 120px;
+        margin: 0.25rem !important;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        border-width: 2px;
+        white-space: nowrap;
+    }
+    
+    .category-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,123,255,0.15);
+    }
+    
+    .category-btn.active {
+        background-color: #0d6efd;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+    }
+    
+    /* Responsive styles */
+    @media (max-width: 768px) {
+        .category-btn {
+            min-width: 100px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        
+        #categories-filter .d-flex {
+            justify-content: center;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .category-btn {
+            min-width: 90px;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        
+        .category-btn i {
+            margin-right: 0.3rem !important;
+        }
+    }
+    </style>
+
+
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-lightbulb"></i> BuddyFix</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showSection('problems')">Problems</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('submit')">Submit Problem</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link btn" onclick="loadAndShowRecentSubmissions()">
+                            <i class="fas fa-history"></i> Recent Submissions
+                        </button>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="trackingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-search-location"></i> Track Problems
+                        </a>
+                        <div class="dropdown-menu p-3" style="width: 300px;">
+                            <div class="mb-3">
+                                <label for="quickTrackId" class="form-label">Quick Track</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="quickTrackId" placeholder="Enter Problem ID" title="Enter your problem tracking ID">
+                                    <button class="btn btn-primary" onclick="quickTrackProblem()" title="Search problem">
+                                        <i class="fas fa-search" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Search problem</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="recentProblems" class="mt-3">
+                                <h6 class="dropdown-header">Recent Submissions</h6>
+                                <div id="recentProblemsList">
+                                    <!-- Recent problems will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <ul class="navbar-nav" id="authNav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('login')">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('register')">Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+     <main>
+    <div class="container mt-4">
+        <!-- Greeting Section -->
+        <section id="greeting" class="text-center mb-5">
+            <h1 class="display-4 mb-3">Welcome to BuddyFix</h1>
+            <p class="lead mb-4">Together, we can make our community better. Report issues, suggest solutions, and track progress on local problems.</p>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-center gap-3">
+                        <div class="text-center px-3">
+                            <i class="fas fa-bullhorn fs-2 text-primary mb-2"></i>
+                            <p class="mb-0">Report Issues</p>
+                        </div>
+                        <div class="text-center px-3">
+                            <i class="fas fa-users fs-2 text-primary mb-2"></i>
+                            <p class="mb-0">Collaborate</p>
+                        </div>
+                        <div class="text-center px-3">
+                            <i class="fas fa-check-circle fs-2 text-primary mb-2"></i>
+                            <p class="mb-0">Track Progress</p>
+                        </div>
+                        <div class="text-center px-3">
+                            <i class="fas fa-robot fs-2 text-primary mb-2"></i>
+                            <p class="mb-0">AI Insights</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Filter Section -->
+        <section id="categories-filter" class="mb-4">
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <button class="btn btn-outline-primary category-btn flex-grow-0" data-category="all">
+                    <i class="fas fa-list-ul me-1"></i> All Problems
+                </button>
+                <button class="btn btn-outline-primary category-btn flex-grow-0" data-category="Infrastructure">
+                    <i class="fas fa-building me-1"></i> Infrastructure
+                </button>
+                <button class="btn btn-outline-primary category-btn flex-grow-0" data-category="Environment">
+                    <i class="fas fa-leaf me-1"></i> Environment
+                </button>
+                <button class="btn btn-outline-primary category-btn flex-grow-0" data-category="Safety">
+                    <i class="fas fa-shield-alt me-1"></i> Safety
+                </button>
+                <button class="btn btn-outline-primary category-btn flex-grow-0" data-category="Other">
+                    <i class="fas fa-ellipsis-h me-1"></i> Other
+                </button>
+            </div>
+        </section>
+
+        <!-- Toast Container for Greetings -->
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1500;">
+            <div id="greetingToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-primary text-white">
+                    <i class="fas fa-stars me-2"></i>
+                    <strong class="me-auto">Welcome Back!</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-circle fs-3 me-2"></i>
+                        <div>
+                            <div id="greeting-message" class="fw-bold"></div>
+                            <small class="text-muted">Ready to make a difference in our community?</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Sections -->
+        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="loginModalLabel">Login</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="loginForm" class="needs-validation" novalidate>
+                                <div class="mb-3">
+                                    <label for="loginUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="loginUsername" required>
+                                <div class="invalid-feedback">Please enter your username.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="loginPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="loginPassword" required>
+                                <div class="invalid-feedback">Please enter your password.</div>
+                                </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="submit" class="btn btn-primary">Login</button>
+                                <button type="button" class="btn btn-link" onclick="switchToRegister()">
+                                    Don't have an account? Register
+                                </button>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="registerModalLabel">Register</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    <div class="modal-body">
+                        <form id="registerForm" class="needs-validation" novalidate>
+                                <div class="mb-3">
+                                    <label for="registerUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="registerUsername" required>
+                                <div class="invalid-feedback">Please choose a username.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registerEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="registerEmail" required>
+                                <div class="invalid-feedback">Please enter a valid email address.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registerPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="registerPassword" required>
+                                <div class="invalid-feedback">Please enter a password.</div>
+                                </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="submit" class="btn btn-primary">Register</button>
+                                <button type="button" class="btn btn-link" onclick="switchToLogin()">
+                                    Already have an account? Login
+                                </button>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Problems List Section -->
+        <section id="problems" class="section">
+            <h2>Current Problems</h2>
+            <div class="row" id="problemsList">
+                <!-- Problems will be loaded here dynamically -->
+            </div>
+        </section>
+
+        <!-- AI Suggestions Modal -->
+        <div class="modal fade" id="aiSuggestionsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">AI-Powered Solutions</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="aiSuggestionsContent" class="p-3">
+                            <div class="placeholder-glow">
+                                <p class="placeholder col-12"></p>
+                                <p class="placeholder col-12"></p>
+                                <p class="placeholder col-12"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Problem Section -->
+        <section id="submit" class="section d-none">
+            <h2>Submit a Problem</h2>
+            <form id="problemForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input type="text" class="form-control" id="title" required placeholder="Enter problem title">
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" rows="3" required placeholder="Describe the problem in detail"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-control" id="category" required>
+                        <option value="">Select a category</option>
+                        <option value="INFRASTRUCTURE">Infrastructure</option>
+                        <option value="UTILITIES">Utilities</option>
+                        <option value="ENVIRONMENT">Environment</option>
+                        <option value="SAFETY">Safety</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="severity" class="form-label">Severity</label>
+                    <select class="form-control" id="severity" required>
+                        <option value="">Select severity level</option>
+                        <option value="LOW">Low</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Problem Image</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    Upload Image
+                                </div>
+                                <div class="card-body">
+                                    <input type="file" 
+                                           class="form-control" 
+                                           id="problemImage" 
+                                           accept="image/*"
+                                           title="Upload an image of the problem"
+                                           placeholder="Choose an image file">
+                                    <div class="form-text">Upload an image of the problem (max 5MB)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    Take Live Photo
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <video id="videoElement" class="d-none w-100 mb-2" autoplay playsinline></video>
+                                        <canvas id="photoCanvas" class="d-none w-100 mb-2"></canvas>
+                                        <img id="capturedImage" class="d-none w-100 mb-2" alt="Captured photo">
+                                    </div>
+                                    <div class="btn-group w-100">
+                                        <button type="button" class="btn btn-primary" id="startCamera">Start Camera</button>
+                                        <button type="button" class="btn btn-success d-none" id="capturePhoto">Capture</button>
+                                        <button type="button" class="btn btn-danger d-none" id="retakePhoto">Retake</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Location</label>
+                    <div id="locationMap" style="height: 300px; margin-bottom: 10px;"></div>
+                    <input type="text" class="form-control" id="address" placeholder="Address" readonly>
+                    <input type="hidden" id="latitude">
+                    <input type="hidden" id="longitude">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Problem </button>
+            </form>
+        </section>
+
+        <!-- Problem Details Modal -->
+        <div class="modal fade" id="problemModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Problem Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h5 class="card-title" id="problemDetailsTitle"></h5>
+                        <p class="card-text" id="problemDetailsDescription"></p>
+                        <p class="text-muted">Category: <span id="problemDetailsCategory"></span></p>
+                        <p class="text-muted">Status: <span id="problemDetailsStatus"></span></p>
+                        <p class="text-muted">Location: <span id="problemDetailsLocation"></span></p>
+                        <div id="problemDetailsImage" class="mb-3"></div>
+                        
+                        <!-- AI Suggestions Section -->
+                        <div class="mt-3">
+                            <h6>AI Suggestions:</h6>
+                            <div id="problemDetailsAISuggestions" class="border p-3 rounded bg-light"></div>
+                        </div>
+
+                        <!-- Comments Section -->
+                        <div class="mt-4">
+                            <h6>Comments</h6>
+                            <div id="commentsSection" class="border rounded p-3 mb-3">
+                                <div id="commentsList" class="mb-3">
+                                    <!-- Comments will be loaded here -->
+                                </div>
+                                <div id="addCommentSection">
+                                    <div class="input-group">
+                                        <textarea id="commentText" class="form-control" rows="2" 
+                                            placeholder="Add your comment..." 
+                                            aria-label="Add your comment"></textarea>
+                                        <button class="btn btn-primary" onclick="addComment(currentProblemId)">
+                                            Post Comment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="toggle-chat" onclick="toggleChat()">Chat 💬</button>
+
+    <!-- Chat Container -->
+    <div class="chat-container" id="chatContainer">
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">Hello! How can I assist you today?</div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+            <div class="loader" id="loader"></div>
+        </div>
+    </div>
+
+    <!-- Problem Tracking Modal -->
+    <div class="modal fade" id="trackingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Track Your Problem</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="tracking-form">
+                        <div class="mb-3">
+                            <label for="problemId" class="form-label">Enter Problem ID</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="problemId" 
+                                    placeholder="e.g., PROB-ABC123" required>
+                                <button class="btn btn-primary" onclick="trackProblem()">
+                                    <i class="fas fa-search"></i> Track
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="trackingResult" class="mt-3 d-none">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-2 text-muted">Problem Status</h6>
+                                <div id="trackingDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+    <!--<div class="footer" style=" bottom: 0; width: 100%;">
+    <div class="footer-section">
+      <h3>Contact Us</h3>
+      <a href="tel:+911000000"><i class="fas fa-phone"></i> +91 1000000</a>
+      <a href="mailto:default@example.com"><i class="fas fa-envelope"></i> default@example.com</a>
+    </div>
+
+    <div class="footer-section">
+      <h3>Quick Links</h3>
+      <a href="#">Home</a>
+      <a href="#">About Us</a>
+      <a href="#">Services</a>
+      <a href="#">Contact</a>
+    </div>
+
+    <div class="footer-section social-icons">
+      <h3>Follow Us</h3>
+      <a href="https://github.com/ishanwalia7579" target="_blank"><i class="fab fa-github"></i></a>
+      <a href="#"><i class="fab fa-twitter"></i></a>
+      <a href="#"><i class="fab fa-linkedin"></i></a>
+    </div>
+  </div>   -->
+
+    <script>
+        const API_KEY = 'AIzaSyDbW58U6O9aYspEtKMhG3-qlDkFNXlUJ-A'; // Replace with your Gemini API key
+        const chatContainer = document.getElementById('chatContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const loader = document.getElementById('loader');
+
+        // Toggle chat visibility
+        function toggleChat() {
+            chatContainer.style.display = chatContainer.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Send message to Gemini API
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            userInput.value = '';
+            loader.style.display = 'block';
+
+            try {
+                // Fetch response from Gemini API
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: message
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const botResponse = data.candidates[0].content.parts[0].text;
+
+                // Add bot response to chat
+                addMessage(botResponse, 'bot');
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            } finally {
+                loader.style.display = 'none';
+            }
+        }
+
+        // Add message to chat window
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+
+            // Scroll to the bottom of the chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Add these functions to your existing JavaScript
+        function showTrackingModal() {
+            const modal = new bootstrap.Modal(document.getElementById('trackingModal'));
+            modal.show();
+        }
+
+        async function trackProblem() {
+            const problemId = document.getElementById('problemId').value.trim();
+            const trackingResult = document.getElementById('trackingResult');
+            const trackingDetails = document.getElementById('trackingDetails');
+
+            if (!problemId) {
+                showAlert('Please enter a problem ID', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/problems?problemId=${problemId}`);
+                const problems = await response.json();
+                const problem = problems.find(p => p.problemId === problemId);
+
+                if (!problem) {
+                    trackingResult.classList.add('d-none');
+                    showAlert('Problem not found. Please check the ID and try again.', 'warning');
+                    return;
+                }
+
+                trackingResult.classList.remove('d-none');
+                trackingDetails.innerHTML = `
+                    <div class="status-${problem.status.toLowerCase()}">
+                        <p class="mb-2">
+                            <span class="status-indicator"></span>
+                            <strong>Status:</strong> ${problem.status}
+                        </p>
+                    </div>
+                    <div class="problem-details">
+                        <h5>${problem.title}</h5>
+                        <p class="text-muted mb-2">Category: ${problem.category}</p>
+                        <p class="mb-2">${problem.description}</p>
+                        <small class="text-muted">Last Updated: ${new Date(problem.createdAt).toLocaleString()}</small>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error tracking problem:', error);
+                showAlert('Error tracking problem. Please try again.', 'danger');
+            }
+        }
+
+        // Problem submission function
+        async function submitProblem(event) {
+            event.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('category', document.getElementById('category').value);
+            formData.append('severity', document.getElementById('severity').value);
+            
+            // Add location data
+            formData.append('latitude', document.getElementById('latitude').value);
+            formData.append('longitude', document.getElementById('longitude').value);
+            formData.append('address', document.getElementById('address').value);
+            
+            // Add image if available
+            const imageInput = document.getElementById('problemImage');
+            if (imageInput.files[0]) {
+                formData.append('image', imageInput.files[0]);
+            }
+            
+            // Add captured photo if available
+            const capturedImage = document.getElementById('capturedImage');
+            if (!capturedImage.classList.contains('d-none')) {
+                const blob = await new Promise(resolve => {
+                    const canvas = document.getElementById('photoCanvas');
+                    canvas.toBlob(resolve, 'image/jpeg');
+                });
+                formData.append('image', blob, 'captured-photo.jpg');
+            }
+
+            try {
+                const response = await fetch('/api/problems', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Problem submission failed');
+                }
+
+                const result = await response.json();
+                showAlert('Problem submitted successfully! Your Problem ID is: ' + result.problemId, 'success');
+                document.getElementById('problemForm').reset();
+                
+                // Reset image preview and camera
+                if (videoElement.srcObject) {
+                    const tracks = videoElement.srcObject.getTracks();
+                    tracks.forEach(track => track.stop());
+                }
+                document.getElementById('videoElement').classList.add('d-none');
+                document.getElementById('capturePhoto').classList.add('d-none');
+                document.getElementById('retakePhoto').classList.add('d-none');
+                document.getElementById('capturedImage').classList.add('d-none');
+                document.getElementById('startCamera').classList.remove('d-none');
+                
+                await loadRecentProblems(); // Refresh the recent problems list
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error submitting problem. Please try again.', 'danger');
+            }
+        }
+
+        // Alert function
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Add form submit event listener
+        document.getElementById('problemForm').addEventListener('submit', submitProblem);
+
+        // Function to quickly track a problem from the navbar
+        async function quickTrackProblem() {
+            const problemId = document.getElementById('quickTrackId').value.trim();
+            if (!problemId) {
+                showAlert('Please enter a problem ID', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/problems?problemId=${problemId}`);
+                const problems = await response.json();
+                const problem = problems.find(p => p.problemId === problemId);
+
+                if (!problem) {
+                    showAlert('Problem not found. Please check the ID and try again.', 'warning');
+                    return;
+                }
+
+                // Show problem details in a modal
+                document.getElementById('problemDetailsTitle').textContent = problem.title;
+                document.getElementById('problemDetailsDescription').textContent = problem.description;
+                document.getElementById('problemDetailsCategory').textContent = problem.category;
+                document.getElementById('problemDetailsStatus').textContent = problem.status;
+                document.getElementById('problemDetailsLocation').textContent = problem.location?.address || 'Location not specified';
+                
+                if (problem.image) {
+                    document.getElementById('problemDetailsImage').innerHTML = `
+                        <img src="${problem.image}" class="img-fluid rounded" alt="${problem.title}">
+                    `;
+                } else {
+                    document.getElementById('problemDetailsImage').innerHTML = '';
+                }
+
+                // Show the modal
+                const problemModal = new bootstrap.Modal(document.getElementById('problemModal'));
+                problemModal.show();
+                
+                // Clear the input
+                document.getElementById('quickTrackId').value = '';
+                
+            } catch (error) {
+                console.error('Error tracking problem:', error);
+                showAlert('Error tracking problem. Please try again.', 'danger');
+            }
+        }
+
+        // Function to load recent problems in the dropdown
+        async function loadRecentProblems() {
+            try {
+                const response = await fetch('/api/problems');
+                const problems = await response.json();
+                const recentProblems = problems.slice(0, 5); // Get last 5 problems
+
+                const recentProblemsList = document.getElementById('recentProblemsList');
+                recentProblemsList.innerHTML = recentProblems.map(problem => `
+                    <a class="dropdown-item d-flex justify-content-between align-items-center" 
+                       href="#" onclick="quickTrackProblem('${problem.problemId}')">
+                        <span class="text-truncate" style="max-width: 200px;" title="${problem.title}">
+                            ${problem.title}
+                        </span>
+                        <small class="text-muted ms-2">${problem.problemId}</small>
+                    </a>
+                `).join('') || '<div class="dropdown-item">No recent problems</div>';
+
+            } catch (error) {
+                console.error('Error loading recent problems:', error);
+                document.getElementById('recentProblemsList').innerHTML = 
+                    '<div class="dropdown-item text-danger">Error loading recent problems</div>';
+            }
+        }
+
+        // Load recent problems when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRecentProblems();
+            // ... existing DOMContentLoaded code ...
+        });
+
+        // Function to load and show recent submissions
+        async function loadAndShowRecentSubmissions() {
+            try {
+                const response = await fetch('/api/problems');
+                const problems = await response.json();
+                
+                // Create modal content
+                let modalContent = `
+                    <div class="modal fade" id="recentSubmissionsModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Recent Problem Submissions</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="list-group">
+                `;
+                
+                problems.forEach(problem => {
+                    const date = new Date(problem.createdAt).toLocaleString();
+                    const statusClass = {
+                        'Pending': 'warning',
+                        'In Progress': 'info',
+                        'Solved': 'success'
+                    }[problem.status] || 'secondary';
+                    
+                    modalContent += `
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${problem.title}</h6>
+                                    <p class="mb-1 text-muted">ID: ${problem.problemId}</p>
+                                    <small>Category: ${problem.category}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-${statusClass}">${problem.status}</span>
+                                    <br>
+                                    <small class="text-muted">${date}</small>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary mt-2" 
+                                    onclick="showProblemDetails('${problem._id}')">
+                                View Details
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                modalContent += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remove existing modal if any
+                const existingModal = document.getElementById('recentSubmissionsModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Add modal to body
+                document.body.insertAdjacentHTML('beforeend', modalContent);
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('recentSubmissionsModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error loading recent submissions:', error);
+                showAlert('Error loading recent submissions. Please try again.', 'danger');
+            }
+        }
+
+        // Function to show problem details
+        async function showProblemDetails(problemId) {
+            try {
+                const response = await fetch(`/api/problems?problemId=${problemId}`);
+                const problems = await response.json();
+                const problem = problems.find(p => p._id === problemId);
+
+                if (!problem) {
+                    showAlert('Problem not found', 'warning');
+                    return;
+                }
+
+                // Close the recent submissions modal
+                const recentModal = bootstrap.Modal.getInstance(document.getElementById('recentSubmissionsModal'));
+                if (recentModal) {
+                    recentModal.hide();
+                }
+
+                // Update problem details modal content
+                document.getElementById('problemDetailsTitle').textContent = problem.title;
+                document.getElementById('problemDetailsDescription').textContent = problem.description;
+                document.getElementById('problemDetailsCategory').textContent = problem.category;
+                document.getElementById('problemDetailsStatus').textContent = problem.status;
+                document.getElementById('problemDetailsLocation').textContent = problem.location?.address || 'Location not specified';
+                
+                if (problem.image) {
+                    document.getElementById('problemDetailsImage').innerHTML = `
+                        <img src="${problem.image}" class="img-fluid rounded" alt="${problem.title}">
+                    `;
+                } else {
+                    document.getElementById('problemDetailsImage').innerHTML = '';
+                }
+
+                // Show the problem details modal
+                const problemModal = new bootstrap.Modal(document.getElementById('problemModal'));
+                problemModal.show();
+            } catch (error) {
+                console.error('Error showing problem details:', error);
+                showAlert('Error loading problem details. Please try again.', 'danger');
+            }
+        }
+
+        // Update the auth nav links to use modals
+        function updateAuthUI(isLoggedIn) {
+            if (isLoggedIn) {
+                authNav.innerHTML = `
+                    <li class="nav-item">
+                        <span class="nav-link">Welcome, ${currentUser.username}</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="handleLogout()">Logout</a>
+                    </li>
+                `;
+            } else {
+                authNav.innerHTML = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
+                    </li>
+                `;
+            }
+        }
+
+        // Function to switch between login and register modals
+        function switchToRegister() {
+            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            loginModal.hide();
+            const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+            registerModal.show();
+        }
+
+        function switchToLogin() {
+            const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+            registerModal.hide();
+            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+        }
+
+        // Update handleLogin function
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    currentUser = userData;
+                    
+                    // Close the login modal
+                    const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                    loginModal.hide();
+                    
+                    // Show greeting toast
+                    showGreeting(currentUser.username);
+                    
+                    // Update UI
+                    await checkAuthStatus();
+                    showSection('problems');
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Login failed', 'danger');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('Error logging in', 'danger');
+            }
+        }
+
+        // Update handleRegister function
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                if (response.ok) {
+                    // Close the register modal
+                    const registerModal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                    registerModal.hide();
+                    
+                    // Show success message
+                    showAlert('Registration successful! Please login.', 'success');
+                    
+                    // Switch to login modal
+                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                    loginModal.show();
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Registration failed', 'danger');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('Error registering', 'danger');
+            }
+        }
+    </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 
